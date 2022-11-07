@@ -13,17 +13,13 @@
 # limitations under the License.
 
 load(
-    "//toolchain/internal:common.bzl",
-    _os = "os",
-)
-load(
     "//toolchain/internal:llvm_distributions.bzl",
     _download_llvm = "download_llvm",
 )
 
 def llvm_repo_impl(rctx):
-    os = _os(rctx)
-    if os == "windows":
+    os = rctx.os.name
+    if os != "linux":
         rctx.file("BUILD", executable = False)
         return
 

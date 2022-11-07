@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-SUPPORTED_TARGETS = [("linux", "x86_64"), ("linux", "aarch64"), ("darwin", "x86_64")]
+SUPPORTED_TARGETS = [("linux", "x86_64"), ("linux", "aarch64")]
 
 host_tool_features = struct(
     SUPPORTS_ARG_FILE = "supports_arg_file",
@@ -36,29 +36,12 @@ def python(rctx):
 
     python3 = rctx.which("python3")
     python = rctx.which("python")
-    python2 = rctx.which("python2")
     if python3:
         return python3
     elif python:
         return python
-    elif python2:
-        return python2
     else:
         fail("python not found")
-
-def os(rctx):
-    name = rctx.os.name
-    if name == "linux":
-        return "linux"
-    elif name == "mac os x":
-        return "darwin"
-    elif name.startswith("windows"):
-        return "windows"
-    fail("Unsupported OS: " + name)
-
-def os_bzl(os):
-    # Return the OS string as used in bazel platform constraints.
-    return {"darwin": "osx", "linux": "linux"}[os]
 
 def arch(rctx):
     exec_result = rctx.execute([

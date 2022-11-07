@@ -19,12 +19,11 @@ load(
 load(
     "//toolchain/internal:common.bzl",
     _check_os_arch_keys = "check_os_arch_keys",
-    _host_tool_features = "host_tool_features",
     _host_tools = "host_tools",
     _os_arch_pair = "os_arch_pair",
 )
 
-# Bazel 4.* doesn't support nested skylark functions, so we cannot simplify
+# Bazel 4.* doesn't support nested starlark functions, so we cannot simplify
 # _fmt_flags() by defining it as a nested function.
 def _fmt_flags(flags, toolchain_path_prefix):
     return [f.format(toolchain_path_prefix = toolchain_path_prefix) for f in flags]
@@ -60,15 +59,6 @@ def cc_toolchain_config(
         abi_version,
         abi_libc_version,
     ) = {
-        "darwin-x86_64": (
-            "clang-x86_64-darwin",
-            "x86_64-apple-macosx",
-            "darwin",
-            "macosx",
-            "clang",
-            "darwin_x86_64",
-            "darwin_x86_64",
-        ),
         "linux-aarch64": (
             "clang-aarch64-linux",
             "aarch64-unknown-linux-gnu",
@@ -140,27 +130,17 @@ def cc_toolchain_config(
     # unused symbols are not stripped.
     link_libs = []
 
-    # Linker flags:
-    if host_os == "darwin" and not is_xcompile:
-        # lld is experimental for Mach-O, so we use the native ld64 linker.
-        # TODO: How do we cross-compile from Linux to Darwin?
-        use_lld = False
-        link_flags.extend([
-            "-headerpad_max_install_names",
-            "-undefined",
-            "dynamic_lookup",
-        ])
-    else:
-        # Note that for xcompiling from darwin to linux, the native ld64 is
-        # not an option because it is not a cross-linker, so lld is the
-        # only option.
-        use_lld = True
-        link_flags.extend([
-            "-fuse-ld=lld",
-            "-Wl,--build-id=md5",
-            "-Wl,--hash-style=gnu",
-            "-Wl,-z,relro,-z,now",
-        ])
+    # Linker flags for Linux:
+    # Note that for xcompiling from darwin to linux, the native ld64 is
+    # not an option because it is not a cross-linker, so lld is the
+    # only option.
+    use_lld = True
+    link_flags.extend([
+        "-fuse-ld=lld",
+        "-Wl,--build-id=md5",
+        "-Wl,--hash-style=gnu",
+        "-Wl,-z,relro,-z,now",
+    ])
 
     # Flags related to C++ standard.
     # The linker has no way of knowing if there are C++ objects; so we
@@ -253,11 +233,6 @@ def cc_toolchain_config(
             sysroot_prefix + "/usr/include",
             sysroot_prefix + "/usr/local/include",
         ])
-    elif target_os == "darwin":
-        cxx_builtin_include_directories.extend([
-            sysroot_prefix + "/usr/include",
-            sysroot_prefix + "/System/Library/Frameworks",
-        ])
     else:
         fail("Unreachable")
 
@@ -267,23 +242,8 @@ def cc_toolchain_config(
     ## pass these to `create_cc_toolchain_config_info`.
 
     # Tool paths:
-    # `llvm-strip` was introduced in V7 (https://reviews.llvm.org/D46407):
-    llvm_version = llvm_version.split(".")
-    llvm_major_ver = int(llvm_version[0]) if len(llvm_version) else 0
-    strip_binary = (tools_path_prefix + "llvm-strip") if llvm_major_ver >= 7 else _host_tools.get_and_assert(host_tools_info, "strip")
-
-    # TODO: The command line formed on darwin does not work with llvm-ar.
+    strip_binary = tools_path_prefix + "llvm-strip"
     ar_binary = tools_path_prefix + "llvm-ar"
-    if host_os == "darwin":
-        # Bazel uses arg files for longer commands; some old macOS `libtool`
-        # versions do not support this.
-        #
-        # In these cases we want to use `libtool_wrapper.sh` which translates
-        # the arg file back into command line arguments.
-        if not _host_tools.tool_supports(host_tools_info, "libtool", features = [_host_tool_features.SUPPORTS_ARG_FILE]):
-            ar_binary = wrapper_bin_prefix + "bin/host_libtool_wrapper.sh"
-        else:
-            ar_binary = host_tools_info["libtool"]["path"]
 
     # The tool names come from [here](https://github.com/bazelbuild/bazel/blob/c7e58e6ce0a78fdaff2d716b4864a5ace8917626/src/main/java/com/google/devtools/build/lib/rules/cpp/CppConfiguration.java#L76-L90):
     # NOTE: Ensure these are listed in toolchain_tools in toolchain/internal/common.bzl.

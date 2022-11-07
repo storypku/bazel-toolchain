@@ -20,9 +20,7 @@ load(
     _host_tool_features = "host_tool_features",
     _host_tools = "host_tools",
     _list_to_string = "list_to_string",
-    _os = "os",
     _os_arch_pair = "os_arch_pair",
-    _os_bzl = "os_bzl",
     _pkg_name_from_label = "pkg_name_from_label",
     _pkg_path_from_label = "pkg_path_from_label",
     _supported_targets = "SUPPORTED_TARGETS",
@@ -45,14 +43,10 @@ def llvm_config_impl(rctx):
     _check_os_arch_keys(rctx.attr.sysroot)
     _check_os_arch_keys(rctx.attr.cxx_builtin_include_directories)
 
-    os = _os(rctx)
-    if os == "windows":
-        rctx.file("BUILD.bazel")
-        rctx.file("toolchains.bzl", """\
-def llvm_register_toolchains():
-    pass
-""")
+    os = rctx.os.name
+    if "linux" != os:
         return
+
     arch = _arch(rctx)
 
     key = _os_arch_pair(os, arch)
@@ -130,7 +124,7 @@ def llvm_register_toolchains():
         unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
         llvm_version = rctx.attr.llvm_version,
     )
-    host_dl_ext = "dylib" if os == "darwin" else "so"
+    host_dl_ext = "so"
     host_tools_info = dict([
         pair
         for (key, tool_path, features) in [
@@ -174,10 +168,7 @@ def llvm_register_toolchains():
     )
 
     # CC wrapper script; see comments near the definition of `wrapper_bin_prefix`.
-    if os == "darwin":
-        cc_wrapper_tpl = "//toolchain:osx_cc_wrapper.sh.tpl"
-    else:
-        cc_wrapper_tpl = "//toolchain:cc_wrapper.sh.tpl"
+    cc_wrapper_tpl = "//toolchain:cc_wrapper.sh.tpl"
     rctx.template(
         "bin/cc_wrapper.sh",
         Label(cc_wrapper_tpl),
@@ -235,7 +226,7 @@ def _cc_toolchains_str(
     return cc_toolchains_str, toolchain_labels_str
 
 # Gets a value from the dict for the target pair, falling back to an empty
-# key, if present.  Bazel 4.* doesn't support nested skylark functions, so
+# key, if present.  Bazel 4.* doesn't support nested starlark functions, so
 # we cannot simplify _dict_value() by defining it as a nested function.
 def _dict_value(d, target_pair, default = None):
     return d.get(target_pair, d.get("", default))
@@ -250,8 +241,11 @@ def _cc_toolchain_str(
     host_os = toolchain_info.os
     host_arch = toolchain_info.arch
 
-    host_os_bzl = _os_bzl(host_os)
-    target_os_bzl = _os_bzl(target_os)
+    if host_os != "linux" or target_os != "linux":
+        fail("The current toolchain was tailored to work only for Linux")
+
+    host_os_bzl = "linux"
+    target_os_bzl = "linux"
 
     sysroot_path, sysroot = _sysroot_path(
         toolchain_info.sysroot_dict,
