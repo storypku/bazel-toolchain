@@ -23,11 +23,7 @@ cd "${scripts_dir}"
 
 binpath="$("${bazel}" info bazel-bin)/stdlib_test"
 
-check_with_image() {
-  if "${CI:-false}"; then
-    # macOS GitHub Action Runners do not have docker installed on them.
-    return
-  fi
+function check_with_image() {
   local image="$1"
   docker run --rm --mount "type=bind,source=${binpath},target=/stdlib_test" "${image}" /stdlib_test
 }
@@ -42,7 +38,9 @@ build_args=(
   --color=yes
   --show_progress_rate_limit=30
 )
+set -x
 "${bazel}" --bazelrc=/dev/null build "${build_args[@]}" //:stdlib_test
+set +x
 file "${binpath}" | tee /dev/stderr | grep -q ELF
 check_with_image "frolvlad/alpine-glibc" # Need glibc image for system libraries.
 
