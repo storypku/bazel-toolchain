@@ -30,6 +30,7 @@ def llvm_repo_impl(rctx):
     )
 
     updated_attrs = _download_llvm(rctx)
+    print(updated_attrs)
 
     # We try to avoid patches to the downloaded repo so that it is easier for
     # users to bring their own LLVM distribution through `http_archive`. If we

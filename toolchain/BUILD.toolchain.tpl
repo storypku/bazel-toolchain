@@ -44,7 +44,7 @@ filegroup(
 
 cc_import(
     name = "omp",
-    shared_library = "%{llvm_repo_package}:lib/libomp.%{host_dl_ext}",
+    shared_library = "%{llvm_repo_package}:lib/libomp.so",
 )
 
 alias(

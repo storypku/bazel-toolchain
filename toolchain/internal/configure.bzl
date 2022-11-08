@@ -124,7 +124,6 @@ def llvm_config_impl(rctx):
         unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
         llvm_version = rctx.attr.llvm_version,
     )
-    host_dl_ext = "so"
     host_tools_info = dict([
         pair
         for (key, tool_path, features) in [
@@ -161,9 +160,8 @@ def llvm_config_impl(rctx):
         {
             "%{cc_toolchain_config_bzl}": str(rctx.attr._cc_toolchain_config_bzl),
             "%{cc_toolchains}": cc_toolchains_str,
-            "%{symlinked_tools}": symlinked_tools_str,
             "%{llvm_repo_package}": _pkg_name_from_label(llvm_repo_label),
-            "%{host_dl_ext}": host_dl_ext,
+            "%{symlinked_tools}": symlinked_tools_str,
         },
     )
 
