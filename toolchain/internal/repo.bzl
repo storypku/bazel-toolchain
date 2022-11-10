@@ -20,21 +20,11 @@ load(
 def llvm_repo_impl(rctx):
     os = rctx.os.name
     if os != "linux":
-        rctx.file("BUILD", executable = False)
-        return
+        fail("Non-Linux system not supported: {}".format(os))
 
     rctx.file(
         "BUILD.bazel",
         content = rctx.read(Label("//toolchain:BUILD.llvm_repo")),
         executable = False,
     )
-
-    updated_attrs = _download_llvm(rctx)
-    print(updated_attrs)
-
-    # We try to avoid patches to the downloaded repo so that it is easier for
-    # users to bring their own LLVM distribution through `http_archive`. If we
-    # do want to make changes, then we should do it through a patch file, and
-    # document it for users of toolchain_roots attribute.
-
-    return updated_attrs
+    _download_llvm(rctx)

@@ -91,31 +91,6 @@ def list_to_string(l):
         return "None"
     return "[{}]".format(", ".join(["\"{}\"".format(d) for d in l]))
 
-def attr_dict(attr):
-    # Returns a mutable dict of attr values from the struct. This is useful to
-    # return updated attribute values as return values of repository_rule
-    # implementations.
-
-    tuples = []
-    for key in dir(attr):
-        if not hasattr(attr, key):
-            fail("key %s not found in attributes" % key)
-        val = getattr(attr, key)
-
-        # Make mutable copies of frozen types.
-        typ = type(val)
-        if typ == "dict":
-            val = dict(val)
-        elif typ == "list":
-            val = list(val)
-        elif typ == "builtin_function_or_method":
-            # Functions can not be compared.
-            continue
-
-        tuples.append((key, val))
-
-    return dict(tuples)
-
 # Tries to figure out if a tool supports newline separated arg files (i.e.
 # `@file`).
 def _tool_supports_arg_file(rctx, tool_path):

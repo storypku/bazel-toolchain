@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//toolchain/internal:common.bzl", _arch = "arch", _attr_dict = "attr_dict")
+load("//toolchain/internal:common.bzl", _arch = "arch")
 
 # Note: Unlike the user-specified llvm_mirror attribute, the URL prefixes in
 # this map are not immediately appended with "/". This is because LLVM prebuilt
@@ -25,15 +25,12 @@ def download_llvm(rctx):
     arch = _arch(rctx)
 
     urls, sha256, strip_prefix = _distribution_urls(arch, llvm_version)
-    updated_attrs = _attr_dict(rctx.attr)
 
     rctx.download_and_extract(
         urls,
         sha256 = sha256,
         stripPrefix = strip_prefix,
     )
-
-    return updated_attrs
 
 def _distribution_urls(arch, llvm_version):
     llvm_dists = {
