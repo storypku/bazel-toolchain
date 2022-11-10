@@ -69,10 +69,6 @@ def _llvm_mirror_urls(basename, llvm_version):
     return urls
 
 def llvm_repo_impl(rctx):
-    os = rctx.os.name
-    if os != "linux":
-        fail("Non-Linux system not supported: {}".format(os))
-
     rctx.file(
         "BUILD.bazel",
         content = rctx.read(Label("//toolchain:BUILD.llvm_repo")),

@@ -38,7 +38,6 @@ filegroup(
     name = "internal-use-wrapped-tools",
     srcs = [
         "bin/cc_wrapper.sh",
-        "bin/host_libtool_wrapper.sh",
     ],
 )
 

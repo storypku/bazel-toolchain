@@ -18,23 +18,6 @@ load(
     _pkg_path_from_label = "pkg_path_from_label",
 )
 
-def _darwin_sdk_path(rctx):
-    exec_result = rctx.execute(["/usr/bin/xcrun", "--show-sdk-path", "--sdk", "macosx"])
-    if exec_result.return_code:
-        fail("Failed to detect OSX SDK path: \n%s\n%s" % (exec_result.stdout, exec_result.stderr))
-    if exec_result.stderr:
-        print(exec_result.stderr)
-    return exec_result.stdout.strip()
-
-# Default sysroot path can be used when the user has not provided an explicit
-# sysroot for the target, and when host platform is the same as target
-# platform.
-def default_sysroot_path(rctx, os):
-    if os == "darwin":
-        return _darwin_sdk_path(rctx)
-    else:
-        return ""
-
 # Return the sysroot path and the label to the files, if sysroot is not a system path.
 def sysroot_path(sysroot_dict, os, arch):
     sysroot = sysroot_dict.get(_os_arch_pair(os, arch))

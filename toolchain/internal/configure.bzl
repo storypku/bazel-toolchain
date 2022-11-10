@@ -26,7 +26,6 @@ load(
 )
 load(
     "//toolchain/internal:sysroot.bzl",
-    _default_sysroot_path = "default_sysroot_path",
     _sysroot_path = "sysroot_path",
 )
 
@@ -94,8 +93,6 @@ def llvm_config_impl(rctx):
         toolchain_path_prefix = llvm_repo_path
         wrapper_bin_prefix = ""
 
-    default_sysroot_path = _default_sysroot_path(rctx, os)
-
     workspace_name = rctx.name
     toolchain_info = struct(
         os = os,
@@ -105,7 +102,6 @@ def llvm_config_impl(rctx):
         tools_path_prefix = tools_path_prefix,
         wrapper_bin_prefix = wrapper_bin_prefix,
         sysroot_dict = rctx.attr.sysroot,
-        default_sysroot_path = default_sysroot_path,
         target_settings_dict = rctx.attr.target_settings,
         additional_include_dirs_dict = rctx.attr.cxx_builtin_include_directories,
         stdlib_dict = rctx.attr.stdlib,
@@ -156,15 +152,6 @@ def llvm_config_impl(rctx):
         Label(cc_wrapper_tpl),
         {
             "%{toolchain_path_prefix}": toolchain_path_prefix,
-        },
-    )
-
-    # libtool wrapper; used if the host libtool doesn't support arg files:
-    rctx.template(
-        "bin/host_libtool_wrapper.sh",
-        Label("//toolchain:host_libtool_wrapper.sh.tpl"),
-        {
-            "%{libtool_path}": "/usr/bin/libtool",
         },
     )
 
@@ -234,7 +221,8 @@ def _cc_toolchain_str(
     if not sysroot_path:
         if host_os == target_os and host_arch == target_arch:
             # For darwin -> darwin, we can use the macOS SDK path.
-            sysroot_path = toolchain_info.default_sysroot_path
+            # TODO(Jiaming): remove darwin support completely
+            sysroot_path = ""  # toolchain_info.default_sysroot_path
         else:
             # We are trying to cross-compile without a sysroot, let's bail.
             # TODO: Are there situations where we can continue?
