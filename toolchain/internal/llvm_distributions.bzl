@@ -12,30 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//toolchain/internal:common.bzl", _arch = "arch", _attr_dict = "attr_dict", _python = "python")
+load("//toolchain/internal:common.bzl", _arch = "arch", _attr_dict = "attr_dict")
 
 # Note: Unlike the user-specified llvm_mirror attribute, the URL prefixes in
 # this map are not immediately appended with "/". This is because LLVM prebuilt
 # URLs changed when they switched to hosting the files on GitHub as of 10.0.0.
 _LLVM_DIST_BASE_URL = "https://github.com/llvm/llvm-project/releases/download/llvmorg-"
-_QCRAFT_OSS_URL = "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages/"
+_QCRAFT_OSS_URL = "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages"
 
 def download_llvm(rctx):
-    urls, sha256, strip_prefix = _distribution_urls(rctx)
+    llvm_version = rctx.attr.llvm_version
+    arch = _arch(rctx)
+
+    urls, sha256, strip_prefix = _distribution_urls(arch, llvm_version)
+    updated_attrs = _attr_dict(rctx.attr)
 
     rctx.download_and_extract(
         urls,
         sha256 = sha256,
         stripPrefix = strip_prefix,
     )
-    updated_attrs = _attr_dict(rctx.attr)
 
     return updated_attrs
 
-def _distribution_urls(rctx):
-    llvm_version = rctx.attr.llvm_version
-    arch = _arch(rctx)
-
+def _distribution_urls(arch, llvm_version):
     llvm_dists = {
         "aarch64-13.0.1": [
             "clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz",
@@ -60,11 +60,14 @@ def _distribution_urls(rctx):
 
     basename, sha256 = llvm_dists[key]
 
-    urls = [_QCRAFT_OSS_URL + basename.replace("+", "%2B")]
-    url_suffix = "{0}/{1}".format(llvm_version, basename).replace("+", "%2B")
-    urls.append("{0}{1}".format(_LLVM_DIST_BASE_URL, url_suffix))
-
+    urls = _llvm_mirror_urls(basename, llvm_version)
     strip_prefix = basename[:(len(basename) - len(".tar.xz"))]
-
-    print("Urls: ", urls)
     return urls, sha256, strip_prefix
+
+def _llvm_mirror_urls(basename, llvm_version):
+    basename = basename.replace("+", "%2B")
+    urls = [
+        "{}/{}".format(_QCRAFT_OSS_URL, basename),
+        "{}{}/{}".format(_LLVM_DIST_BASE_URL, llvm_version, basename),
+    ]
+    return urls
