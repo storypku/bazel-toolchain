@@ -19,7 +19,6 @@ load(
 load(
     "//toolchain/internal:common.bzl",
     _check_os_arch_keys = "check_os_arch_keys",
-    _host_tools = "host_tools",
     _os_arch_pair = "os_arch_pair",
 )
 
@@ -40,8 +39,7 @@ def cc_toolchain_config(
         tools_path_prefix,
         wrapper_bin_prefix,
         compiler_configuration,
-        llvm_version,
-        host_tools_info = {}):
+        llvm_version):
     host_os_arch_key = _os_arch_pair(host_os, host_arch)
     target_os_arch_key = _os_arch_pair(target_os, target_arch)
     _check_os_arch_keys([host_os_arch_key, target_os_arch_key])
@@ -253,7 +251,7 @@ def cc_toolchain_config(
         "dwp": tools_path_prefix + "llvm-dwp",
         "gcc": wrapper_bin_prefix + "bin/cc_wrapper.sh",
         "gcov": tools_path_prefix + "llvm-profdata",
-        "ld": tools_path_prefix + "ld.lld" if use_lld else _host_tools.get_and_assert(host_tools_info, "ld"),
+        "ld": tools_path_prefix + "ld.lld",
         "llvm-cov": tools_path_prefix + "llvm-cov",
         "llvm-profdata": tools_path_prefix + "llvm-profdata",
         "nm": tools_path_prefix + "llvm-nm",

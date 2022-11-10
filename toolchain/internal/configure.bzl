@@ -17,8 +17,6 @@ load(
     _arch = "arch",
     _canonical_dir_path = "canonical_dir_path",
     _check_os_arch_keys = "check_os_arch_keys",
-    _host_tool_features = "host_tool_features",
-    _host_tools = "host_tools",
     _list_to_string = "list_to_string",
     _os_arch_pair = "os_arch_pair",
     _pkg_name_from_label = "pkg_name_from_label",
@@ -124,24 +122,10 @@ def llvm_config_impl(rctx):
         unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
         llvm_version = rctx.attr.llvm_version,
     )
-    host_tools_info = dict([
-        pair
-        for (key, tool_path, features) in [
-            # This is used for macOS hosts:
-            ("libtool", "/usr/bin/libtool", [_host_tool_features.SUPPORTS_ARG_FILE]),
-            # This is used with old (pre 7) LLVM versions:
-            ("strip", "/usr/bin/strip", []),
-            # This is used when lld doesn't support the target platform (i.e.
-            # Mach-O for macOS):
-            ("ld", "/usr/bin/ld", []),
-        ]
-        for pair in _host_tools.get_tool_info(rctx, tool_path, features, key).items()
-    ])
     cc_toolchains_str, toolchain_labels_str = _cc_toolchains_str(
         workspace_name,
         toolchain_info,
         use_absolute_paths,
-        host_tools_info,
     )
 
     # Convenience macro to register all generated toolchains.
@@ -187,8 +171,7 @@ def llvm_config_impl(rctx):
 def _cc_toolchains_str(
         workspace_name,
         toolchain_info,
-        use_absolute_paths,
-        host_tools_info):
+        use_absolute_paths):
     # Since all the toolchains rely on downloading the right LLVM toolchain for
     # the host architecture, we don't need to explicitly specify
     # `exec_compatible_with` attribute. If the host and execution platform are
@@ -212,7 +195,6 @@ def _cc_toolchains_str(
             target_arch,
             toolchain_info,
             use_absolute_paths,
-            host_tools_info,
         )
         if cc_toolchain_str:
             cc_toolchains_str = cc_toolchains_str + cc_toolchain_str
@@ -234,8 +216,7 @@ def _cc_toolchain_str(
         target_os,
         target_arch,
         toolchain_info,
-        use_absolute_paths,
-        host_tools_info):
+        use_absolute_paths):
     host_os = toolchain_info.os
     host_arch = toolchain_info.arch
 
@@ -263,10 +244,6 @@ def _cc_toolchain_str(
     extra_files_str = ", \":internal-use-symlinked-tools\", \":internal-use-wrapped-tools\""
 
     target_pair = _os_arch_pair(target_os, target_arch)
-
-    # `struct` isn't allowed in `BUILD` files so we JSON encode + decode to turn
-    # them into `dict`s.
-    host_tools_info = json.decode(json.encode(host_tools_info))
 
     template = """
 # CC toolchain for cc-clang-{suffix}.
@@ -297,7 +274,6 @@ cc_toolchain_config(
       "unfiltered_compile_flags": {unfiltered_compile_flags},
     }},
     llvm_version = "{llvm_version}",
-    host_tools_info = {host_tools_info},
 )
 
 toolchain(
@@ -418,5 +394,4 @@ cc_toolchain(
         unfiltered_compile_flags = _list_to_string(_dict_value(toolchain_info.unfiltered_compile_flags_dict, target_pair)),
         llvm_version = toolchain_info.llvm_version,
         extra_files_str = extra_files_str,
-        host_tools_info = host_tools_info,
     )
