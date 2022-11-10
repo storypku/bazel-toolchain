@@ -200,17 +200,9 @@ toolchain = repository_rule(
 
 def llvm_toolchain(name, **kwargs):
     if not kwargs.get("toolchain_roots"):
-        llvm_args = {
-            k: v
-            for k, v in kwargs.items()
-            if (k not in _llvm_config_attrs.keys()) or (k in _common_attrs.keys())
-        }
-        llvm_repo(name = name + "_llvm", **llvm_args)
-        kwargs.update(toolchain_roots = {"": "@%s_llvm//" % name})
-
-    toolchain_args = {
-        k: v
-        for k, v in kwargs.items()
-        if (k not in _llvm_repo_attrs.keys()) or (k in _common_attrs.keys())
-    }
-    toolchain(name = name, **toolchain_args)
+        llvm_version = kwargs.get("llvm_version", None)
+        if not llvm_version:
+            llvm_version = "14.0.0"
+        llvm_repo(name = name + "_llvm", llvm_version = llvm_version)
+        kwargs.update(toolchain_roots = {"": "@{}_llvm//".format(name)})
+    toolchain(name = name, **kwargs)

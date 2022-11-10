@@ -41,9 +41,6 @@ def llvm_config_impl(rctx):
     _check_os_arch_keys(rctx.attr.cxx_builtin_include_directories)
 
     os = rctx.os.name
-    if "linux" != os:
-        return
-
     arch = _arch(rctx)
 
     key = _os_arch_pair(os, arch)
@@ -58,8 +55,8 @@ def llvm_config_impl(rctx):
     if toolchain_root[0] == "/" and (len(toolchain_root) == 1 or toolchain_root[1] != "/"):
         use_absolute_paths = True
 
+    llvm_repo_label = Label(toolchain_root + ":BUILD.bazel")  # Exact target does not matter.
     if use_absolute_paths:
-        llvm_repo_label = Label(toolchain_root + ":BUILD.bazel")  # Exact target does not matter.
         llvm_repo_path = _canonical_dir_path(str(rctx.path(llvm_repo_label).dirname))
         config_repo_path = _canonical_dir_path(str(rctx.path("")))
         llvm_repo_label_prefix = llvm_repo_path
@@ -68,9 +65,8 @@ def llvm_config_impl(rctx):
         symlinked_tools_str = ""
         wrapper_bin_prefix = config_repo_path
     else:
-        llvm_repo_label = Label(toolchain_root + ":BUILD.bazel")  # Exact target does not matter.
         llvm_repo_path = _pkg_path_from_label(llvm_repo_label)
-        config_repo_path = "external/%s/" % rctx.name
+        config_repo_path = "external/{}/".format(rctx.name)
 
         # tools can only be defined in a subdirectory of config_repo_path,
         # because their paths are relative to the package defining
@@ -220,8 +216,6 @@ def _cc_toolchain_str(
     )
     if not sysroot_path:
         if host_os == target_os and host_arch == target_arch:
-            # For darwin -> darwin, we can use the macOS SDK path.
-            # TODO(Jiaming): remove darwin support completely
             sysroot_path = ""  # toolchain_info.default_sysroot_path
         else:
             # We are trying to cross-compile without a sysroot, let's bail.

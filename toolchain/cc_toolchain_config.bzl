@@ -91,7 +91,7 @@ def cc_toolchain_config(
         "-fdebug-prefix-map={}=__bazel_toolchain_llvm_repo__/".format(toolchain_path_prefix),
     ]
 
-    is_xcompile = not (host_os == target_os and host_arch == target_arch)
+    is_xcompile = not (host_arch == target_arch)
 
     # Default compiler flags:
     compile_flags = [
@@ -202,7 +202,7 @@ def cc_toolchain_config(
     else:
         fail("Unknown value passed for stdlib: {stdlib}".format(stdlib = stdlib))
 
-    opt_link_flags = ["-Wl,--gc-sections"] if target_os == "linux" else []
+    opt_link_flags = ["-Wl,--gc-sections"]
 
     # Coverage flags:
     coverage_compile_flags = ["-fprofile-instr-generate", "-fcoverage-mapping"]
@@ -236,17 +236,10 @@ def cc_toolchain_config(
 
     cxx_builtin_include_directories.extend(compiler_configuration["additional_include_dirs"])
 
-    ## NOTE: make variables are missing here; unix_cc_toolchain_config doesn't
-    ## pass these to `create_cc_toolchain_config_info`.
-
-    # Tool paths:
-    strip_binary = tools_path_prefix + "llvm-strip"
-    ar_binary = tools_path_prefix + "llvm-ar"
-
     # The tool names come from [here](https://github.com/bazelbuild/bazel/blob/c7e58e6ce0a78fdaff2d716b4864a5ace8917626/src/main/java/com/google/devtools/build/lib/rules/cpp/CppConfiguration.java#L76-L90):
     # NOTE: Ensure these are listed in toolchain_tools in toolchain/internal/common.bzl.
     tool_paths = {
-        "ar": ar_binary,
+        "ar": tools_path_prefix + "llvm-ar",
         "cpp": tools_path_prefix + "clang-cpp",
         "dwp": tools_path_prefix + "llvm-dwp",
         "gcc": wrapper_bin_prefix + "bin/cc_wrapper.sh",
@@ -257,7 +250,7 @@ def cc_toolchain_config(
         "nm": tools_path_prefix + "llvm-nm",
         "objcopy": tools_path_prefix + "llvm-objcopy",
         "objdump": tools_path_prefix + "llvm-objdump",
-        "strip": strip_binary,
+        "strip": tools_path_prefix + "llvm-strip",
     }
 
     # Start-end group linker support:
