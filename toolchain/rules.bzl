@@ -185,7 +185,7 @@ _llvm_config_attrs.update({
     ),
 })
 
-llvm = repository_rule(
+llvm_repo = repository_rule(
     attrs = _llvm_repo_attrs,
     local = False,
     implementation = _llvm_repo_impl,
@@ -205,7 +205,7 @@ def llvm_toolchain(name, **kwargs):
             for k, v in kwargs.items()
             if (k not in _llvm_config_attrs.keys()) or (k in _common_attrs.keys())
         }
-        llvm(name = name + "_llvm", **llvm_args)
+        llvm_repo(name = name + "_llvm", **llvm_args)
         kwargs.update(toolchain_roots = {"": "@%s_llvm//" % name})
 
     toolchain_args = {

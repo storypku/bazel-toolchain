@@ -14,10 +14,6 @@
 
 SUPPORTED_TARGETS = [("linux", "x86_64"), ("linux", "aarch64")]
 
-host_tool_features = struct(
-    SUPPORTS_ARG_FILE = "supports_arg_file",
-)
-
 toolchain_tools = [
     "clang-cpp",
     "ld.lld",
@@ -33,7 +29,6 @@ toolchain_tools = [
 
 def python(rctx):
     # Get path of the python interpreter.
-
     python3 = rctx.which("python3")
     python = rctx.which("python")
     if python3:
@@ -56,7 +51,7 @@ def arch(rctx):
 def os_arch_pair(os, arch):
     return "{}-{}".format(os, arch)
 
-_supported_os_arch = [os_arch_pair(os, arch) for (os, arch) in SUPPORTED_TARGETS]
+_supported_os_arch = ["linux-x86_64", "linux-aarch64"]
 
 def supported_os_arch_keys():
     return _supported_os_arch
