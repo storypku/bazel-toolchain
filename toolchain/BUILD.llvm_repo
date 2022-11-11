@@ -63,11 +63,6 @@ filegroup(
             "lib/libclang*.a",
             "lib/liblld*.a",
         ],
-    ) + glob(
-        [
-            "lib/lib*.dylib",
-            "lib/clang/*/lib/**/*.dylib",
-        ],
     ),
 )
 

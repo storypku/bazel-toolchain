@@ -30,23 +30,23 @@ toolchain_tools = [
 def python(rctx):
     # Get path of the python interpreter.
     python3 = rctx.which("python3")
-    python = rctx.which("python")
     if python3:
         return python3
-    elif python:
+    python = rctx.which("python")
+    if python:
         return python
     else:
-        fail("python not found")
+        fail("Python not found")
 
 def arch(rctx):
-    exec_result = rctx.execute([
+    result = rctx.execute([
         python(rctx),
         "-c",
         "import platform; print(platform.machine())",
     ])
-    if exec_result.return_code:
-        fail("Failed to detect machine architecture: \n%s\n%s" % (exec_result.stdout, exec_result.stderr))
-    return exec_result.stdout.strip()
+    if result.return_code:
+        fail("Failed to detect machine architecture: \n{}\n{}".format(result.stdout, result.stderr))
+    return result.stdout.strip()
 
 def os_arch_pair(os, arch):
     return "{}-{}".format(os, arch)
