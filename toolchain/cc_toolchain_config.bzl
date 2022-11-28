@@ -18,16 +18,14 @@ def _fmt_flags(flags, toolchain_path_prefix):
 def cc_toolchain_config(
         name,
         host_arch,
-        host_os,
         target_arch,
-        target_os,
         toolchain_path_prefix,
         tools_path_prefix,
         wrapper_bin_prefix,
         compiler_configuration,
         llvm_version):
-    host_os_arch_key = _os_arch_pair(host_os, host_arch)
-    target_os_arch_key = _os_arch_pair(target_os, target_arch)
+    host_os_arch_key = _os_arch_pair("linux", host_arch)
+    target_os_arch_key = _os_arch_pair("linux", target_arch)
     _check_os_arch_keys([host_os_arch_key, target_os_arch_key])
 
     # A bunch of variables that get passed straight through to
@@ -194,9 +192,6 @@ def cc_toolchain_config(
     coverage_compile_flags = ["-fprofile-instr-generate", "-fcoverage-mapping"]
     coverage_link_flags = ["-fprofile-instr-generate"]
 
-    ## NOTE: framework paths is missing here; unix_cc_toolchain_config
-    ## doesn't seem to have a feature for this.
-
     # C++ built-in include directories:
     cxx_builtin_include_directories = []
     if toolchain_path_prefix.startswith("/"):
@@ -211,15 +206,11 @@ def cc_toolchain_config(
     sysroot_prefix = ""
     if sysroot_path:
         sysroot_prefix = "%sysroot%"
-    if target_os == "linux":
-        cxx_builtin_include_directories.extend([
-            sysroot_prefix + "/include",
-            sysroot_prefix + "/usr/include",
-            sysroot_prefix + "/usr/local/include",
-        ])
-    else:
-        fail("Unreachable")
-
+    cxx_builtin_include_directories.extend([
+        sysroot_prefix + "/include",
+        sysroot_prefix + "/usr/include",
+        sysroot_prefix + "/usr/local/include",
+    ])
     cxx_builtin_include_directories.extend(compiler_configuration["additional_include_dirs"])
 
     # The tool names come from [here](https://github.com/bazelbuild/bazel/blob/c7e58e6ce0a78fdaff2d716b4864a5ace8917626/src/main/java/com/google/devtools/build/lib/rules/cpp/CppConfiguration.java#L76-L90):
@@ -240,11 +231,7 @@ def cc_toolchain_config(
     }
 
     # Start-end group linker support:
-    # This was added to `lld` in this patch: http://reviews.llvm.org/D18814
-    #
-    # The oldest version of LLVM that we support is 6.0.0 which was released
-    # after the above patch was merged, so we just set this to `True` when
-    # `lld` is being used as the linker.
+    # set to `True` when `lld` is being used as the linker.
     supports_start_end_lib = use_lld
 
     # Replace flags with any user-provided overrides.

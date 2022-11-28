@@ -215,9 +215,7 @@ def _cc_toolchain_str(
 cc_toolchain_config(
     name = "local-{suffix}",
     host_arch = "{host_arch}",
-    host_os = "{host_os}",
     target_arch = "{target_arch}",
-    target_os = "{target_os}",
     toolchain_path_prefix = "{toolchain_path_prefix}",
     tools_path_prefix = "{tools_path_prefix}",
     wrapper_bin_prefix = "{wrapper_bin_prefix}",
@@ -329,9 +327,7 @@ cc_toolchain(
 
     return template.format(
         suffix = suffix,
-        target_os = target_os,
         target_arch = target_arch,
-        host_os = host_os,
         host_arch = host_arch,
         llvm_repo_label_prefix = toolchain_info.llvm_repo_label_prefix,
         toolchain_path_prefix = toolchain_info.toolchain_path_prefix,
