@@ -1,17 +1,3 @@
-# Copyright 2018 The Bazel Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 load(
     "//toolchain/internal:common.bzl",
     _arch = "arch",
@@ -98,7 +84,6 @@ def llvm_config_impl(rctx):
         tools_path_prefix = tools_path_prefix,
         wrapper_bin_prefix = wrapper_bin_prefix,
         sysroot_dict = rctx.attr.sysroot,
-        target_settings_dict = rctx.attr.target_settings,
         additional_include_dirs_dict = rctx.attr.cxx_builtin_include_directories,
         stdlib_dict = rctx.attr.stdlib,
         cxx_standard_dict = rctx.attr.cxx_standard,
@@ -206,9 +191,6 @@ def _cc_toolchain_str(
     if host_os != "linux" or target_os != "linux":
         fail("The current toolchain was tailored to work only for Linux")
 
-    host_os_bzl = "linux"
-    target_os_bzl = "linux"
-
     sysroot_path, sysroot = _sysroot_path(
         toolchain_info.sysroot_dict,
         target_os,
@@ -262,13 +244,12 @@ toolchain(
     name = "cc-toolchain-{suffix}",
     exec_compatible_with = [
         "@platforms//cpu:{host_arch}",
-        "@platforms//os:{host_os_bzl}",
+        "@platforms//os:linux",
     ],
     target_compatible_with = [
         "@platforms//cpu:{target_arch}",
-        "@platforms//os:{target_os_bzl}",
+        "@platforms//os:linux",
     ],
-    target_settings = {target_settings},
     toolchain = ":cc-clang-{suffix}",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
@@ -352,9 +333,6 @@ cc_toolchain(
         target_arch = target_arch,
         host_os = host_os,
         host_arch = host_arch,
-        target_settings = _list_to_string(_dict_value(toolchain_info.target_settings_dict, target_pair)),
-        target_os_bzl = target_os_bzl,
-        host_os_bzl = host_os_bzl,
         llvm_repo_label_prefix = toolchain_info.llvm_repo_label_prefix,
         toolchain_path_prefix = toolchain_info.toolchain_path_prefix,
         tools_path_prefix = toolchain_info.tools_path_prefix,
