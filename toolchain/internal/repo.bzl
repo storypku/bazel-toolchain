@@ -17,7 +17,7 @@ def _download_llvm_release(rctx):
 
 def _distribution_urls(arch, llvm_version):
     llvm_dists = {
-        "aarch64-13.0.1": [
+        "x86_64-13.0.1": [
             "clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz",
             "84a54c69781ad90615d1b0276a83ff87daaeded99fbc64457c350679df7b4ff0",
         ],
@@ -25,7 +25,7 @@ def _distribution_urls(arch, llvm_version):
             "clang+llvm-14.0.0-aarch64-linux-gnu.tar.xz",
             "1792badcd44066c79148ffeb1746058422cc9d838462be07e3cb19a4b724a1ee",
         ],
-        "x86_64-13.0.1": [
+        "aarch64-13.0.1": [
             "clang+llvm-13.0.1-aarch64-linux-gnu.tar.xz",
             "15ff2db12683e69e552b6668f7ca49edaa01ce32cb1cbc8f8ed2e887ab291069",
         ],

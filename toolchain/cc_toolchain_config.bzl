@@ -140,6 +140,7 @@ def cc_toolchain_config(
             # For single-platform builds, we can statically link the bundled
             # libraries.
             link_flags.extend([
+                "-L{}lib".format(toolchain_path_prefix),
                 "-l:libc++.a",
                 "-l:libc++abi.a",
                 "-l:libunwind.a",
@@ -219,7 +220,7 @@ def cc_toolchain_config(
         "ar": tools_path_prefix + "llvm-ar",
         "cpp": tools_path_prefix + "clang-cpp",
         "dwp": tools_path_prefix + "llvm-dwp",
-        "gcc": wrapper_bin_prefix + "bin/cc_wrapper.sh",
+        "gcc": wrapper_bin_prefix + "cc_wrapper.sh",
         "gcov": tools_path_prefix + "llvm-profdata",
         "ld": tools_path_prefix + "ld.lld",
         "llvm-cov": tools_path_prefix + "llvm-cov",

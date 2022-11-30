@@ -6,40 +6,34 @@ load("%{cc_toolchain_config_bzl}", "cc_toolchain_config")
 # Following filegroup targets are used when not using absolute paths and shared
 # between different toolchains.
 
-filegroup(
-    name = "empty",
-    srcs = [],
-)
-
 # Tools symlinked through this repo. This target is for internal use in the toolchain only.
 filegroup(
     name = "internal-use-symlinked-tools",
-    srcs = [
-%{symlinked_tools}
+    srcs = [%{symlinked_tools}
     ],
+    visibility = ["//visibility:private"],
 )
 
 # Tools wrapped through this repo. This target is for internal use in the toolchain only.
 filegroup(
     name = "internal-use-wrapped-tools",
     srcs = [
-        "bin/cc_wrapper.sh",
+        "%{wrapper_bin_prefix}cc_wrapper.sh",
     ],
+    visibility = ["//visibility:private"],
 )
 
-cc_import(
-    name = "omp",
-    shared_library = "%{llvm_repo_package}:lib/libomp.so",
-)
-
-alias(
-    name = "clang-format",
-    actual = "%{llvm_repo_package}:bin/clang-format",
-)
-
-alias(
-    name = "llvm-cov",
-    actual = "%{llvm_repo_package}:bin/llvm-cov",
+# All internal use files.
+filegroup(
+    name = "internal-use-files",
+    srcs = [
+        ":internal-use-symlinked-tools",
+        ":internal-use-wrapped-tools",
+    ],
+    visibility = ["//visibility:private"],
 )
 
 %{cc_toolchains}
+
+# Convenience targets from the LLVM toolchain.
+%{convenience_targets}
