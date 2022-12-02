@@ -8,19 +8,19 @@ def repo():
     http_archive(
         name = "chromium_sysroot_linux_x64",
         build_file = clean_dep("//third_party/sysroots:chromium_sysroot.BUILD"),
-        sha256 = "84656a6df544ecef62169cfe3ab6e41bb4346a62d3ba2a045dc5a0a2ecea94a3",
+        sha256 = "eecc42a03d559efbf9e32149bfc406c049e85f316222c9cf142e02df108d2ba4",
         urls = [
-            "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages/debian_stretch_amd64_sysroot.tar.xz",
-            "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/2202c161310ffde63729f29d27fe7bb24a0bc540/debian_stretch_amd64_sysroot.tar.xz",
+            "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages/debian_bullseye_amd64_sysroot.tar.xz",
+            "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/22c3eb7715cbeee97c444ad931c474744d1e610f/debian_bullseye_amd64_sysroot.tar.xz",
         ],
     )
 
     http_archive(
         name = "chromium_sysroot_linux_arm64",
         build_file = clean_dep("//third_party/sysroots:chromium_sysroot.BUILD"),
-        sha256 = "0d4ba53fa4aed14e50c07a65131d078f2a3ee2f53e695ed93855facf4860bea5",
+        sha256 = "2e3a344f48da76b6532f3de86759f94359292143ccaf6094814e09441a36629f",
         urls = [
-            "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages/debian_stretch_arm64_sysroot.tar.xz",
-            "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/1126d9b629c97385a503debac7a1b59e60a3ab1b/debian_stretch_arm64_sysroot.tar.xz",
+            "https://qcraft-web.oss-cn-beijing.aliyuncs.com/cache/packages/debian_bullseye_arm64_sysroot.tar.xz",
+            "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/0e28d9832614729bb5b731161ff96cb4d516f345/debian_bullseye_arm64_sysroot.tar.xz",
         ],
     )
