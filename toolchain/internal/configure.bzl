@@ -33,54 +33,33 @@ def llvm_config_impl(rctx):
 
     key = _os_arch_pair(os, arch)
 
-    # Check if the toolchain root is a system path.
-    system_llvm = False
-    if llvm_dist.llvm_dir:
-        # system_llvm = True
-        pass
+    llvm_dist_label = Label("@llvm_repo//{}:BUILD.bazel".format(llvm_dist.prefix))
+    llvm_dist_path_prefix = _pkg_path_from_label(llvm_dist_label) + "/"
+    llvm_dist_rel_path = _canonical_dir_path("../../" + llvm_dist_path_prefix)
+    llvm_dist_top_label_prefix = "@llvm_repo//:"
+    llvm_dist_label_prefix = "{}{}/".format(llvm_dist_top_label_prefix, llvm_dist.prefix)
 
-    use_absolute_paths = system_llvm
-
-    # Paths for LLVM distribution:
-    if system_llvm:
-        llvm_dist_path_prefix = _canonical_dir_path(llvm_dist.llvm_dir)
-        llvm_dist_rel_path = llvm_dist_path_prefix
-        llvm_dist_label_prefix = llvm_dist_path_prefix
-        llvm_dist_top_label_prefix = llvm_dist_path_prefix
-
-        # Path to individual tool binaries.
-        # No symlinking necessary when using absolute paths.
-        wrapper_bin_prefix = "bin/"
-        tools_path_prefix = llvm_dist_path_prefix + "bin/"
-        symlinked_tools_str = ""
-    else:
-        llvm_dist_label = Label("@llvm_repo//{}:BUILD.bazel".format(llvm_dist.prefix))
-        llvm_dist_path_prefix = _pkg_path_from_label(llvm_dist_label)
-        llvm_dist_rel_path = _canonical_dir_path("../../" + llvm_dist_path_prefix)
-        llvm_dist_top_label_prefix = "@llvm_repo//:"
-        llvm_dist_label_prefix = "{}{}/".format(llvm_dist_top_label_prefix, llvm_dist.prefix)
-
-        # tools can only be defined as absolute paths or in a subdirectory of
-        # config_repo_path, because their paths are relative to the package
-        # defining cc_toolchain, and cannot contain '..'.
-        # https://github.com/bazelbuild/bazel/issues/7746.  To work around
-        # this, we symlink the needed tools under the package so that they (except
-        # clang) can be called with normalized relative paths. For clang
-        # however, using a path with symlinks interferes with the header file
-        # inclusion validation checks, because clang frontend will infer the
-        # InstalledDir to be the symlinked path, and will look for header files
-        # in the symlinked path, but that seems to fail the inclusion
-        # validation check. So we always use a cc_wrapper (which is called
-        # through a normalized relative path), and then call clang with the not
-        # symlinked path from the wrapper.
-        wrapper_bin_prefix = "bin/"
-        tools_path_prefix = "bin/"
-        for tool_name in _toolchain_tools:
-            rctx.symlink(llvm_dist_rel_path + "bin/" + tool_name, tools_path_prefix + tool_name)
-        symlinked_tools_str = "".join([
-            "\n" + (" " * 8) + "\"" + tools_path_prefix + name + "\","
-            for name in _toolchain_tools
-        ])
+    # tools can only be defined as absolute paths or in a subdirectory of
+    # config_repo_path, because their paths are relative to the package
+    # defining cc_toolchain, and cannot contain '..'.
+    # https://github.com/bazelbuild/bazel/issues/7746.  To work around
+    # this, we symlink the needed tools under the package so that they (except
+    # clang) can be called with normalized relative paths. For clang
+    # however, using a path with symlinks interferes with the header file
+    # inclusion validation checks, because clang frontend will infer the
+    # InstalledDir to be the symlinked path, and will look for header files
+    # in the symlinked path, but that seems to fail the inclusion
+    # validation check. So we always use a cc_wrapper (which is called
+    # through a normalized relative path), and then call clang with the not
+    # symlinked path from the wrapper.
+    wrapper_bin_prefix = "bin/"
+    tools_path_prefix = "bin/"
+    for tool_name in _toolchain_tools:
+        rctx.symlink(llvm_dist_rel_path + "bin/" + tool_name, tools_path_prefix + tool_name)
+    symlinked_tools_str = "".join([
+        "\n" + (" " * 8) + "\"" + tools_path_prefix + name + "\","
+        for name in _toolchain_tools
+    ])
 
     workspace_name = rctx.name
     toolchain_info = struct(
@@ -107,17 +86,13 @@ def llvm_config_impl(rctx):
         unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
         llvm_version = rctx.attr.llvm_version,
     )
-    print("====", workspace_name, json.encode_indent(toolchain_info, indent = 2 * " "))
-    print("====llvm_dist_rel_path={}".format(llvm_dist_rel_path))
     cc_toolchains_str, toolchain_labels_str = _cc_toolchains_str(
         workspace_name,
         toolchain_info,
-        use_absolute_paths,
     )
 
     convenience_targets_str = _convenience_targets_str(
         rctx,
-        use_absolute_paths,
         llvm_dist_rel_path,
         llvm_dist_label_prefix,
     )
@@ -156,8 +131,7 @@ def llvm_config_impl(rctx):
 
 def _cc_toolchains_str(
         workspace_name,
-        toolchain_info,
-        use_absolute_paths):
+        toolchain_info):
     # Since all the toolchains rely on downloading the right LLVM toolchain for
     # the host architecture, we don't need to explicitly specify
     # `exec_compatible_with` attribute. If the host and execution platform are
@@ -180,7 +154,6 @@ def _cc_toolchains_str(
             target_os,
             target_arch,
             toolchain_info,
-            use_absolute_paths,
         )
         if cc_toolchain_str:
             cc_toolchains_str = cc_toolchains_str + cc_toolchain_str
@@ -201,8 +174,7 @@ def _cc_toolchain_str(
         suffix,
         target_os,
         target_arch,
-        toolchain_info,
-        use_absolute_paths):
+        toolchain_info):
     host_os = toolchain_info.os
     host_arch = toolchain_info.arch
 
@@ -269,21 +241,7 @@ toolchain(
 )
 """
 
-    if use_absolute_paths:
-        template = template + """
-cc_toolchain(
-    name = "cc-clang-{suffix}",
-    all_files = ":internal-use-files",
-    compiler_files = ":internal-use-files",
-    dwp_files = ":internal-use-files",
-    linker_files = ":internal-use-files",
-    objcopy_files = ":internal-use-files",
-    strip_files = ":internal-use-files",
-    toolchain_config = "local-{suffix}",
-)
-"""
-    else:
-        template = template + """
+    template = template + """
 filegroup(
     name = "sysroot-components-{suffix}",
     srcs = [{sysroot_label_str}],
@@ -416,20 +374,7 @@ cc_toolchain(
         extra_files_str = extra_files_str,
     )
 
-def _convenience_targets_str(rctx, use_absolute_paths, llvm_dist_rel_path, llvm_dist_label_prefix):
-    if use_absolute_paths:
-        llvm_dist_label_prefix = ":"
-        filenames = []
-        for libname in _ALIASED_LIBS:
-            filename = "lib/{}.so".format(libname)
-            filenames.append(filename)
-        for toolname in _ALIASED_TOOLS:
-            filename = "bin/{}".format(toolname)
-            filenames.append(filename)
-
-        for filename in filenames:
-            rctx.symlink(llvm_dist_rel_path + filename, filename)
-
+def _convenience_targets_str(rctx, llvm_dist_rel_path, llvm_dist_label_prefix):
     lib_target_strs = []
     for name in _ALIASED_LIBS:
         template = """

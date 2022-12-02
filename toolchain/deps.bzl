@@ -12,4 +12,4 @@ def bazel_toolchain_dependencies():
         )
 
     if not native.existing_rule("llvm_repo"):
-        llvm_repo(use_local = False)
+        llvm_repo(use_local = True)
