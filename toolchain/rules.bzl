@@ -6,10 +6,6 @@ load(
     "//toolchain/internal:configure.bzl",
     _llvm_config_impl = "llvm_config_impl",
 )
-load(
-    "//toolchain/internal:repo.bzl",
-    _llvm_repo_impl = "llvm_repo_impl",
-)
 
 _common_attrs = {
     "llvm_version": attr.string(
@@ -144,47 +140,15 @@ _compiler_configuration_attrs = {
 _llvm_config_attrs = dict(_common_attrs)
 _llvm_config_attrs.update(_compiler_configuration_attrs)
 _llvm_config_attrs.update({
-    "absolute_paths": attr.bool(
-        default = False,
-        doc = "Use absolute paths in the toolchain. Avoids sandbox overhead.",
-    ),
-    "toolchain_roots": attr.string_dict(
-        mandatory = True,
-        # TODO: Ideally, we should be taking a filegroup label here instead of a package path, but
-        # we ultimately need to subset the files to be more selective in what we include in the
-        # sandbox for which operations, and it is not straightforward to subset a filegroup.
-        doc = ("System or package path, for each host OS and arch pair you want to support " +
-               "({}), ".format(_target_pairs) + "to be used as the LLVM toolchain " +
-               "distributions. An empty key can be used to specify a fallback default for " +
-               "all hosts, e.g. with the llvm_toolchain_repo rule. " +
-               "If the value begins with exactly one forward slash '/', then the value is " +
-               "assumed to be a system path and the toolchain is configured to use absolute " +
-               "paths. Else, the value will be assumed to be a bazel package containing the " +
-               "filegroup targets as in BUILD.llvm_repo."),
-    ),
     "_cc_toolchain_config_bzl": attr.label(
         default = "//toolchain:cc_toolchain_config.bzl",
     ),
 })
 
-llvm_repo = repository_rule(
-    attrs = _llvm_repo_attrs,
-    local = False,
-    implementation = _llvm_repo_impl,
-)
-
-toolchain = repository_rule(
+llvm_toolchain = repository_rule(
     attrs = _llvm_config_attrs,
     local = True,
     configure = True,
     implementation = _llvm_config_impl,
 )
 
-def llvm_toolchain(name, **kwargs):
-    if not kwargs.get("toolchain_roots"):
-        llvm_version = kwargs.get("llvm_version", None)
-        if not llvm_version:
-            llvm_version = "14.0.0"
-        llvm_repo(name = name + "_llvm", llvm_version = llvm_version)
-        kwargs.update(toolchain_roots = {"": "@{}_llvm//".format(name)})
-    toolchain(name = name, **kwargs)

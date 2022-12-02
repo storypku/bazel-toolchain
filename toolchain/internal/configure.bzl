@@ -1,3 +1,5 @@
+load("@llvm_repo//:defs.bzl", llvm_dist = "llvm")
+
 load(
     "//toolchain/internal:common.bzl",
     _arch = "arch",
@@ -24,7 +26,6 @@ def _include_dirs_str(rctx, key):
     return ("\n" + 12 * " ").join(["\"%s\"," % d for d in dirs])
 
 def llvm_config_impl(rctx):
-    _check_os_arch_keys(rctx.attr.toolchain_roots)
     _check_os_arch_keys(rctx.attr.sysroot)
     _check_os_arch_keys(rctx.attr.cxx_builtin_include_directories)
 
@@ -32,29 +33,23 @@ def llvm_config_impl(rctx):
     arch = _arch(rctx)
 
     key = _os_arch_pair(os, arch)
-    toolchain_root = rctx.attr.toolchain_roots.get(key)
-    if not toolchain_root:
-        toolchain_root = rctx.attr.toolchain_roots.get("")
-    if not toolchain_root:
-        fail("LLVM toolchain root missing for ({}, {})", os, arch)
 
     # Check if the toolchain root is a system path.
     system_llvm = False
-    if toolchain_root[0] == "/" and (len(toolchain_root) == 1 or toolchain_root[1] != "/"):
-        use_absolute_paths = True
+    if llvm_dist.llvm_dir:
         system_llvm = True
+
     use_absolute_paths = system_llvm
 
     # Paths for LLVM distribution:
     if system_llvm:
-        llvm_dist_path_prefix = _canonical_dir_path(toolchain_root)
+        llvm_dist_path_prefix = _canonical_dir_path(llvm_dist.llvm_dir)
     else:
-        llvm_dist_label = Label(toolchain_root + ":BUILD.bazel")  # Exact target does not matter.
-        llvm_dist_path_prefix = _pkg_path_from_label(llvm_dist_label)
+        llvm_dist_path_prefix = _pkg_path_from_label(Label("@llvm_repo//:BUILD.bazel"))
 
     if not use_absolute_paths:
         llvm_dist_rel_path = _canonical_dir_path("../../" + llvm_dist_path_prefix)
-        llvm_dist_label_prefix = toolchain_root + ":"
+        llvm_dist_label_prefix = "@llvm_repo//:"
 
         # tools can only be defined as absolute paths or in a subdirectory of
         # config_repo_path, because their paths are relative to the package
@@ -357,7 +352,7 @@ cc_toolchain(
         sysroot_label_str = sysroot_label_str,
         sysroot_path = sysroot_path,
         additional_include_dirs = _list_to_string(toolchain_info.additional_include_dirs_dict.get(target_pair, [])),
-        stdlib = _dict_value(toolchain_info.stdlib_dict, target_pair, "stdc++"),
+        stdlib = _dict_value(toolchain_info.stdlib_dict, target_pair, "builtin-libc++"),
         cxx_standard = _dict_value(toolchain_info.cxx_standard_dict, target_pair, "c++17"),
         compile_flags = _list_to_string(_dict_value(toolchain_info.compile_flags_dict, target_pair)),
         cxx_flags = _list_to_string(_dict_value(toolchain_info.cxx_flags_dict, target_pair)),
