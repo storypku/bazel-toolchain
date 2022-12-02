@@ -31,8 +31,8 @@ set -eu
 # `wrapper_bin_prefix` for why this wrapper is needed.
 
 # Call the C++ compiler.
-if [[ -f %{toolchain_path_prefix}bin/clang ]]; then
-  exec %{toolchain_path_prefix}bin/clang "$@"
+if [[ -f %{toolchain_path_prefix}/bin/clang ]]; then
+  exec %{toolchain_path_prefix}/bin/clang "$@"
 elif [[ "${BASH_SOURCE[0]}" == "/"* ]]; then
   # Some consumers of `CcToolchainConfigInfo` (e.g. `cmake` from rules_foreign_cc)
   # change CWD and call $CC (this script) with its absolute path.
@@ -40,7 +40,7 @@ elif [[ "${BASH_SOURCE[0]}" == "/"* ]]; then
   # we'll try to find `clang` relative to this script.
   # This script is at _execroot_/external/_repo_name_/bin/clang_wrapper.sh
   execroot_path="${BASH_SOURCE[0]%/*/*/*/*}"
-  clang="${execroot_path}/%{toolchain_path_prefix}bin/clang"
+  clang="${execroot_path}/%{toolchain_path_prefix}/bin/clang"
   exec "${clang}" "${@}"
 else
   >&2 echo "ERROR: could not find clang; PWD=\"$(pwd)\"; PATH=\"${PATH}\"."

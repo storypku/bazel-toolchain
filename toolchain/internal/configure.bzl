@@ -1,5 +1,4 @@
 load("@llvm_repo//:defs.bzl", llvm_dist = "llvm")
-
 load(
     "//toolchain/internal:common.bzl",
     _arch = "arch",
@@ -37,19 +36,29 @@ def llvm_config_impl(rctx):
     # Check if the toolchain root is a system path.
     system_llvm = False
     if llvm_dist.llvm_dir:
-        system_llvm = True
+        # system_llvm = True
+        pass
 
     use_absolute_paths = system_llvm
 
     # Paths for LLVM distribution:
     if system_llvm:
         llvm_dist_path_prefix = _canonical_dir_path(llvm_dist.llvm_dir)
-    else:
-        llvm_dist_path_prefix = _pkg_path_from_label(Label("@llvm_repo//:BUILD.bazel"))
+        llvm_dist_rel_path = llvm_dist_path_prefix
+        llvm_dist_label_prefix = llvm_dist_path_prefix
+        llvm_dist_top_label_prefix = llvm_dist_path_prefix
 
-    if not use_absolute_paths:
+        # Path to individual tool binaries.
+        # No symlinking necessary when using absolute paths.
+        wrapper_bin_prefix = "bin/"
+        tools_path_prefix = llvm_dist_path_prefix + "bin/"
+        symlinked_tools_str = ""
+    else:
+        llvm_dist_label = Label("@llvm_repo//{}:BUILD.bazel".format(llvm_dist.prefix))
+        llvm_dist_path_prefix = _pkg_path_from_label(llvm_dist_label)
         llvm_dist_rel_path = _canonical_dir_path("../../" + llvm_dist_path_prefix)
-        llvm_dist_label_prefix = "@llvm_repo//:"
+        llvm_dist_top_label_prefix = "@llvm_repo//:"
+        llvm_dist_label_prefix = "{}{}/".format(llvm_dist_top_label_prefix, llvm_dist.prefix)
 
         # tools can only be defined as absolute paths or in a subdirectory of
         # config_repo_path, because their paths are relative to the package
@@ -72,20 +81,12 @@ def llvm_config_impl(rctx):
             "\n" + (" " * 8) + "\"" + tools_path_prefix + name + "\","
             for name in _toolchain_tools
         ])
-    else:
-        llvm_dist_rel_path = llvm_dist_path_prefix
-        llvm_dist_label_prefix = llvm_dist_path_prefix
-
-        # Path to individual tool binaries.
-        # No symlinking necessary when using absolute paths.
-        wrapper_bin_prefix = "bin/"
-        tools_path_prefix = llvm_dist_path_prefix + "bin/"
-        symlinked_tools_str = ""
 
     workspace_name = rctx.name
     toolchain_info = struct(
         os = os,
         arch = arch,
+        llvm_dist_top_label_prefix = llvm_dist_top_label_prefix,
         llvm_dist_label_prefix = llvm_dist_label_prefix,
         llvm_dist_path_prefix = llvm_dist_path_prefix,
         tools_path_prefix = tools_path_prefix,
@@ -106,7 +107,7 @@ def llvm_config_impl(rctx):
         unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
         llvm_version = rctx.attr.llvm_version,
     )
-    print("====", workspace_name, json.encode_indent(toolchain_info, indent=2 * ' '))
+    print("====", workspace_name, json.encode_indent(toolchain_info, indent = 2 * " "))
     print("====llvm_dist_rel_path={}".format(llvm_dist_rel_path))
     cc_toolchains_str, toolchain_labels_str = _cc_toolchains_str(
         workspace_name,
@@ -210,7 +211,6 @@ def _cc_toolchain_str(
         target_os,
         target_arch,
     )
-    print("===sysroot_path={}, sysroot={}===".format(sysroot_path, sysroot))
     if not sysroot_path:
         if host_arch != target_arch:
             # We are trying to cross-compile without a sysroot, let's bail.
@@ -221,7 +221,7 @@ def _cc_toolchain_str(
 
     sysroot_label_str = "\"%s\"" % str(sysroot) if sysroot else ""
 
-    extra_files_str = ", \":internal-use-files\""
+    extra_files_str = "\n{}\":internal-use-files\",".format(8 * " ")
 
     target_pair = _os_arch_pair(target_os, target_arch)
 
@@ -292,8 +292,8 @@ filegroup(
 filegroup(
     name = "compiler-components-{suffix}",
     srcs = [
-        "{llvm_dist_label_prefix}clang",
-        "{llvm_dist_label_prefix}include",
+        "{llvm_dist_top_label_prefix}clang",
+        "{llvm_dist_top_label_prefix}include",
         ":sysroot-components-{suffix}",
     ],
 )
@@ -301,10 +301,10 @@ filegroup(
 filegroup(
     name = "linker-components-{suffix}",
     srcs = [
-        "{llvm_dist_label_prefix}clang",
-        "{llvm_dist_label_prefix}ld",
-        "{llvm_dist_label_prefix}ar",
-        "{llvm_dist_label_prefix}lib",
+        "{llvm_dist_top_label_prefix}clang",
+        "{llvm_dist_top_label_prefix}ld",
+        "{llvm_dist_top_label_prefix}ar",
+        "{llvm_dist_top_label_prefix}lib",
         ":sysroot-components-{suffix}",
     ],
 )
@@ -312,20 +312,67 @@ filegroup(
 filegroup(
     name = "all-components-{suffix}",
     srcs = [
-        "{llvm_dist_label_prefix}bin",
+        "{llvm_dist_top_label_prefix}bin",
         ":compiler-components-{suffix}",
         ":linker-components-{suffix}",
     ],
 )
 
-filegroup(name = "all-files-{suffix}", srcs = [":all-components-{suffix}"{extra_files_str}])
-filegroup(name = "archiver-files-{suffix}", srcs = ["{llvm_dist_label_prefix}ar"{extra_files_str}])
-filegroup(name = "assembler-files-{suffix}", srcs = ["{llvm_dist_label_prefix}as"{extra_files_str}])
-filegroup(name = "compiler-files-{suffix}", srcs = [":compiler-components-{suffix}"{extra_files_str}])
-filegroup(name = "dwp-files-{suffix}", srcs = ["{llvm_dist_label_prefix}dwp"{extra_files_str}])
-filegroup(name = "linker-files-{suffix}", srcs = [":linker-components-{suffix}"{extra_files_str}])
-filegroup(name = "objcopy-files-{suffix}", srcs = ["{llvm_dist_label_prefix}objcopy"{extra_files_str}])
-filegroup(name = "strip-files-{suffix}", srcs = ["{llvm_dist_label_prefix}strip"{extra_files_str}])
+filegroup(
+    name = "all-files-{suffix}",
+    srcs = [
+        ":all-components-{suffix}",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "archiver-files-{suffix}",
+    srcs = [
+        "{llvm_dist_top_label_prefix}ar",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "assembler-files-{suffix}",
+    srcs = [
+        "{llvm_dist_top_label_prefix}as",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "compiler-files-{suffix}",
+    srcs = [
+        ":compiler-components-{suffix}",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "dwp-files-{suffix}",
+    srcs = [
+        "{llvm_dist_top_label_prefix}dwp",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "linker-files-{suffix}",
+    srcs = [
+        ":linker-components-{suffix}",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "objcopy-files-{suffix}",
+    srcs = [
+        "{llvm_dist_top_label_prefix}objcopy",{extra_files_str}
+    ],
+)
+
+filegroup(
+    name = "strip-files-{suffix}",
+    srcs = [
+        "{llvm_dist_top_label_prefix}strip",{extra_files_str}
+    ],
+)
 
 cc_toolchain(
     name = "cc-clang-{suffix}",
@@ -345,6 +392,7 @@ cc_toolchain(
         suffix = suffix,
         target_arch = target_arch,
         host_arch = host_arch,
+        llvm_dist_top_label_prefix = toolchain_info.llvm_dist_top_label_prefix,
         llvm_dist_label_prefix = toolchain_info.llvm_dist_label_prefix,
         llvm_dist_path_prefix = toolchain_info.llvm_dist_path_prefix,
         tools_path_prefix = toolchain_info.tools_path_prefix,

@@ -140,7 +140,7 @@ def cc_toolchain_config(
             # For single-platform builds, we can statically link the bundled
             # libraries.
             link_flags.extend([
-                "-L{}lib".format(toolchain_path_prefix),
+                "-L{}/lib".format(toolchain_path_prefix),
                 "-l:libc++.a",
                 "-l:libc++abi.a",
                 "-l:libunwind.a",
