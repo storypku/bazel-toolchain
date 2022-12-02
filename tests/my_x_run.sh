@@ -7,4 +7,5 @@
     --extra_toolchains=@llvm_toolchain_with_sysroot//:cc-toolchain-aarch64-linux \
     --color=yes \
     //:stdlib_test \
-    //examples:sha256_test
+    //examples:sha256_test \
+    //third_party/libevent:hello

@@ -36,19 +36,12 @@ load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
 
 llvm_register_toolchains()
 
-## Toolchain example with system LLVM; tested in GitHub CI.
-llvm_toolchain(
-    name = "llvm_toolchain_with_system_llvm",
-    llvm_version = LLVM_VERSION,
-)
+
+load("//third_party:3rdparty_dependencies.bzl", "init_3rdparty_deps")
+init_3rdparty_deps()
 
 ## Toolchain example with a sysroot.
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//third_party/sysroots:workspace.bzl", chromium_sysroots = "repo")
-load("//third_party/openssl:workspace.bzl", openssl = "repo")
-openssl()
-
-chromium_sysroots()
 
 llvm_toolchain(
     name = "llvm_toolchain_with_sysroot",
