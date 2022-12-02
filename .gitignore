@@ -2,3 +2,4 @@
 /toolchain/tools/__pycache__
 /toolchain/tools/host_os_key.pyc
 /tests/external
+/bazel-*

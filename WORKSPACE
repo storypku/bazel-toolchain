@@ -15,3 +15,7 @@
 workspace(
     name = "com_grail_bazel_toolchain",
 )
+
+load("//third_party/llvm_repo:workspace.bzl", llvm_repo = "repo")
+llvm_repo(use_local = True)
+
